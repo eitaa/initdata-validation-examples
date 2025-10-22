@@ -1,0 +1,30 @@
+
+initDataString = "مقدار دریافتی از کلاینت"
+botToken = "توکن"
+
+queryParams = PARSE_QUERY_STRING(initDataString)
+receivedHash = queryParams["hash"]
+REMOVE queryParams["hash"]
+
+// مرحله 2: مرتب‌سازی کلیدها به ترتیب الفبایی و ساخت آرایه key=value
+keyValues = []
+FOR EACH key IN SORT_ALPHABETICALLY(queryParams.keys):
+    keyValues.APPEND(key + "=" + queryParams[key])
+END FOR
+
+// مرحله 3: ایجاد رشته data_check_string با جداکننده \n
+data_check_string = JOIN(keyValues, "\n")
+
+// مرحله 4: تولید secret_key با HMAC-SHA256 از توکن و رشته "WebAppData"
+secret_key = HMAC_SHA256(key="WebAppData", message=botToken, outputRaw=true)
+
+// مرحله 5: محاسبه calculatedHash با HMAC-SHA256 از data_check_string و secret_key
+calculatedHash = HMAC_SHA256(key=secret_key, message=data_check_string, outputHex=true)
+
+// مرحله 6: مقایسه hash دریافتی با hash محاسبه‌شده
+IF SECURE_COMPARE(calculatedHash, receivedHash):
+    RETURN true
+ELSE:
+    RETURN false
+END IF
+
